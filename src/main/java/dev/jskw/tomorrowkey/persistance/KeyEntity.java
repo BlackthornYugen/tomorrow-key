@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
+
 @Entity
 @Data
 @Builder
@@ -23,6 +25,9 @@ public class KeyEntity {
 
     @Lob
     private byte[] encodedPublicKey;
+
     private String keyType;
     private Integer keySize;
+    private Instant createdAt;
+    private Instant releaseAt;
 }

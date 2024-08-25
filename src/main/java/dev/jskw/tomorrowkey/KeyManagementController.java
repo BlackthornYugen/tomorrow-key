@@ -76,7 +76,7 @@ public class KeyManagementController {
     @GetMapping(value = "/{identifier}/private", produces = "application/x-pem-file")
     public ResponseEntity<String> getPrivateKeyPem(@PathVariable String identifier) {
         var keyDto = keyGenerationService.getById(identifier);
-        if (keyDto == null) {
+        if (keyDto == null || keyDto.getPrivateKey() == null) {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(getPem(keyDto, false));
@@ -126,16 +126,19 @@ public class KeyManagementController {
     private String getPem(KeyDto keyDto, boolean isPublic) {
         final String label;
         final String keyTypeString;
+        final String key;
         if (isPublic) {
+            key = keyDto.getPublicKey();
             keyTypeString = "";
             label = "PUBLIC KEY";
         } else {
+            key = keyDto.getPrivateKey();
             keyTypeString = keyDto.getKeyType().equals(KeyType.EC) ? "EC " : "";
             label = "PRIVATE KEY";
         }
         return String.format("-----BEGIN %s%s-----\n%s-----END %s%s-----\n",
                 keyTypeString, label,
-                wrapBase64String(keyDto.getPrivateKey(), 64),
+                wrapBase64String(key, 64),
                 keyTypeString, label);
     }
 }
