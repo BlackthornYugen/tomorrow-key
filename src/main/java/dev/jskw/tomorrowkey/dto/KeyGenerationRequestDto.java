@@ -6,10 +6,10 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class PrivateKeyResponseDto {
-    private String encoded;
-    private String releasedAt;
+public class KeyGenerationRequestDto {
+    private String releaseAt;
     private String identifier;
     private KeyType keyType;
     private Integer keySize;
+
 }

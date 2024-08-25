@@ -1,12 +1,21 @@
 package dev.jskw.tomorrowkey.dto;
 
+import dev.jskw.tomorrowkey.KeyType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Setter
 @Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class KeyDto {
-    // Getters and Setters
-    private PrivateKeyResponseDto privateKey;
-    private PublicKeyResponseDto publicKey;
+    private String id;
+    private KeyType keyType;
+    private Integer keySize;
+    private String privateKey;
+    private String publicKey;
 }
