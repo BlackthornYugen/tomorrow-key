@@ -1,7 +1,6 @@
 package dev.jskw.tomorrowkey.dto;
 
 import dev.jskw.tomorrowkey.KeyType;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
