@@ -5,16 +5,18 @@ import dev.jskw.tomorrowkey.dto.KeyGenerationRequestDto;
 import dev.jskw.tomorrowkey.dto.KeyGenerationResponseDto;
 import dev.jskw.tomorrowkey.dto.PrivateKeyResponseDto;
 import dev.jskw.tomorrowkey.dto.PublicKeyResponseDto;
+import jakarta.validation.constraints.Pattern;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.FileAlreadyExistsException;
 import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 
@@ -27,13 +29,16 @@ public class KeyManagementController {
         this.keyGenerationService = keyGenerationService;
     }
 
-    @PostMapping("/generate")
-    public ResponseEntity<KeyGenerationResponseDto> generateKey(@RequestBody KeyGenerationRequestDto request) {
+
+    @PutMapping("/{identifier}")
+    public ResponseEntity<KeyGenerationResponseDto> generateKey(
+            @PathVariable @Pattern(regexp = "[A-Za-z][A-Za-z0-9-]{3,127}") String identifier,
+            @RequestBody KeyGenerationRequestDto request) {
         try {
             KeyGenerationResponseDto response = keyGenerationService.generateKey(
                     request.getKeyType(),
                     request.getKeySize(),
-                    request.getIdentifier(),
+                    identifier,
                     request.getReleaseHours()
             );
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -41,6 +46,8 @@ public class KeyManagementController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (InvalidParameterException invalidParameterException) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (FileAlreadyExistsException fileAlreadyExistsException) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
 
@@ -114,6 +121,13 @@ public class KeyManagementController {
     public ResponseEntity<String> getPublicKeyPem(@PathVariable String identifier) {
         KeyDto keyDto = keyGenerationService.getById(identifier);
         return ResponseEntity.ok(getPem(keyDto, true));
+    }
+
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Page<KeyDto>> getKeys(
+            @PageableDefault(size = 40, sort = "releaseAt", direction = Sort.Direction.ASC) @ParameterObject Pageable pageable) {
+        Page<KeyDto> keys = keyGenerationService.getKeys(pageable);
+        return ResponseEntity.ok(keys);
     }
 
     private String wrapBase64String(String base64, int lineLength) {

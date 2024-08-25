@@ -4,8 +4,11 @@ import dev.jskw.tomorrowkey.dto.KeyDto;
 import dev.jskw.tomorrowkey.dto.KeyGenerationResponseDto;
 import dev.jskw.tomorrowkey.persistance.KeyEntity;
 import dev.jskw.tomorrowkey.persistance.KeyRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.FileAlreadyExistsException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -24,8 +27,7 @@ public class KeyGenerationService {
         formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
     }
 
-    public KeyGenerationResponseDto generateKey(KeyType keyType, Integer keySize, String identifier, Long releaseHours) throws NoSuchAlgorithmException {
-
+    public KeyGenerationResponseDto generateKey(KeyType keyType, Integer keySize, String identifier, Long releaseHours) throws NoSuchAlgorithmException, FileAlreadyExistsException {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(keyType.name());
         keySize = keySize != null ? keySize : 2048;
         keyPairGenerator.initialize(keySize);
@@ -37,6 +39,11 @@ public class KeyGenerationService {
         if (identifier == null) {
             identifier = "%s-%d_hours".formatted(now.format(formatter), releaseHours);
         }
+        KeyDto existingKey = getById(identifier);
+        if (existingKey != null) {
+            throw new FileAlreadyExistsException("Key with identifier %s already exists".formatted(identifier));
+        }
+
         var key = KeyEntity.builder()
                 .id(identifier)
                 .createdAt(LocalDateTime.now().toInstant(ZoneOffset.UTC))
@@ -63,13 +70,22 @@ public class KeyGenerationService {
         if (keyEntity == null) {
             return null;
         }
+        return getKeyDto(keyEntity);
+    }
+
+    public Page<KeyDto> getKeys(Pageable pageable) {
+        return repository.findAll(pageable).map(this::getKeyDto);
+    }
+
+    private KeyDto getKeyDto(KeyEntity keyEntity) {
         var builder = KeyDto.builder()
                 .id(keyEntity.getId())
                 .keySize(keyEntity.getKeySize())
+                .releaseAt(keyEntity.getReleaseAt())
+                .createdAt(keyEntity.getCreatedAt())
                 .keyType(KeyType.valueOf(keyEntity.getKeyType()))
                 .publicKey(Base64.getEncoder().encodeToString(keyEntity.getEncodedPublicKey()));
-        // if released set the private key
-        if (keyEntity.getReleaseAt().isBefore(LocalDateTime.now().toInstant(ZoneOffset.UTC))) {
+        if (keyEntity.getReleaseAt() != null && keyEntity.getReleaseAt().isBefore(LocalDateTime.now().toInstant(ZoneOffset.UTC))) {
             builder.privateKey(Base64.getEncoder().encodeToString(keyEntity.getEncodedPrivateKey()));
         }
         return builder.build();
