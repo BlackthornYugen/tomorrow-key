@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.spec.X509EncodedKeySpec;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -18,24 +17,30 @@ import java.util.Base64;
 @Service
 public class KeyGenerationService {
     final KeyRepository repository;
+    final DateTimeFormatter formatter;
 
     public KeyGenerationService(KeyRepository repository) {
         this.repository = repository;
+        formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
     }
 
-    public KeyGenerationResponseDto generateKey(KeyType keyType, Integer keySize) throws NoSuchAlgorithmException {
+    public KeyGenerationResponseDto generateKey(KeyType keyType, Integer keySize, String identifier, Long releaseHours) throws NoSuchAlgorithmException {
 
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(keyType.name());
         keySize = keySize != null ? keySize : 2048;
         keyPairGenerator.initialize(keySize);
         KeyPair keyPair = keyPairGenerator.generateKeyPair();
         LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        String identifier = now.format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")) + "-24_hours";
+        if (releaseHours == null) {
+            releaseHours = 24L;
+        }
+        if (identifier == null) {
+            identifier = "%s-%d_hours".formatted(now.format(formatter), releaseHours);
+        }
         var key = KeyEntity.builder()
                 .id(identifier)
                 .createdAt(LocalDateTime.now().toInstant(ZoneOffset.UTC))
-                .releaseAt(LocalDateTime.now().plusHours(24).toInstant(ZoneOffset.UTC))
+                .releaseAt(LocalDateTime.now().plusHours(releaseHours).toInstant(ZoneOffset.UTC))
                 .keyType(keyType.name())
                 .keySize(keySize)
                 .encodedPrivateKey(keyPair.getPrivate().getEncoded())

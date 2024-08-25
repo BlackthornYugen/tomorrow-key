@@ -30,7 +30,12 @@ public class KeyManagementController {
     @PostMapping("/generate")
     public ResponseEntity<KeyGenerationResponseDto> generateKey(@RequestBody KeyGenerationRequestDto request) {
         try {
-            KeyGenerationResponseDto response = keyGenerationService.generateKey(request.getKeyType(), request.getKeySize());
+            KeyGenerationResponseDto response = keyGenerationService.generateKey(
+                    request.getKeyType(),
+                    request.getKeySize(),
+                    request.getIdentifier(),
+                    request.getReleaseHours()
+            );
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -57,7 +62,6 @@ public class KeyManagementController {
 
         PrivateKeyResponseDto response = new PrivateKeyResponseDto();
         response.setEncoded(keyDto.getPrivateKey());
-//        response.setReleasedAt("2024-08-25T15:00:00Z");
         response.setIdentifier(keyDto.getId());
         response.setKeyType(keyDto.getKeyType());
         response.setKeySize(keyDto.getKeySize());

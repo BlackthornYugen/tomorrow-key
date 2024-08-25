@@ -1,4 +1,3 @@
-// src/main/java/dev/jskw/tomorrowkey/entity/KeyGenerationResponse.java
 package dev.jskw.tomorrowkey.persistance;
 
 import jakarta.persistence.Entity;
