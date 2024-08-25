@@ -1,68 +1,88 @@
 package dev.jskw.tomorrowkey;
 
+import dev.jskw.tomorrowkey.dto.KeyDto;
+import dev.jskw.tomorrowkey.dto.KeyGenerationResponseDto;
+import dev.jskw.tomorrowkey.dto.PrivateKeyResponseDto;
+import dev.jskw.tomorrowkey.dto.PublicKeyResponseDto;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.NoSuchAlgorithmException;
+
 @RestController
-@RequestMapping("/api/v1/keys")
+@RequestMapping("/keys")
 public class KeyManagementController {
+    private final KeyGenerationService keyGenerationService;
+
+    public KeyManagementController(KeyGenerationService keyGenerationService) {
+        this.keyGenerationService = keyGenerationService;
+    }
 
     @PostMapping("/generate")
     public ResponseEntity<KeyGenerationResponseDto> generateKey(@RequestBody KeyGenerationResponseDto request) {
-        // Business logic for key generation would go here
-
-        // Stub response for now
-        KeyGenerationResponseDto response = new KeyGenerationResponseDto();
-        response.setPublicKey("BASE64_ENCODED_PUBLIC_KEY");
-        response.setPrivateKeyReleaseAt("2024-08-25T15:00:00Z");
-        response.setIdentifier("20240825T120000Z-24_hours");
-        response.setKeyType(request.getKeyType());
-        response.setKeySize(request.getKeySize() != null ? request.getKeySize() : 2048);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        try {
+            KeyGenerationResponseDto response = keyGenerationService.generateKey(KeyType.valueOf(request.getKeyType().toUpperCase()), request.getKeySize());
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
-    @GetMapping("/{identifier}/private")
-    public ResponseEntity<?> getPrivateKey(
-            @PathVariable String identifier,
-            @RequestHeader("Accept") String acceptHeader) {
+    @GetMapping(value = "/{identifier}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<KeyDto> getKeyJson(@PathVariable String identifier) {
+        PrivateKeyResponseDto privateKeyResponseDto = new PrivateKeyResponseDto();
+        privateKeyResponseDto.setEncoded("BASE64_ENCODED_PRIVATE_KEY");
+        privateKeyResponseDto.setReleasedAt("2024-08-25T15:00:00Z");
+        privateKeyResponseDto.setIdentifier(identifier);
+        privateKeyResponseDto.setKeyType("rsa");
+        privateKeyResponseDto.setKeySize(2048);
 
-        // Business logic for retrieving the private key would go here
+        PublicKeyResponseDto publicKeyResponseDto = new PublicKeyResponseDto();
+        publicKeyResponseDto.setEncoded("BASE64_ENCODED_PUBLIC_KEY");
+        publicKeyResponseDto.setCreatedAt("2024-08-25T12:00:00Z");
+        publicKeyResponseDto.setIdentifier(identifier);
+        publicKeyResponseDto.setKeyType("rsa");
+        publicKeyResponseDto.setKeySize(2048);
 
-        // Stub response for different formats
-        switch (acceptHeader) {
-            case MediaType.APPLICATION_JSON_VALUE -> {
-                PrivateKeyResponseDto response = new PrivateKeyResponseDto();
-                response.setPrivateKey("BASE64_ENCODED_PRIVATE_KEY");
-                response.setReleasedAt("2024-08-25T15:00:00Z");
-                response.setDownloadedAt("2024-08-25T15:01:00Z");
-                response.setIdentifier(identifier);
-                response.setKeyType("rsa");
-                response.setKeySize(2048);
+        KeyDto keyDto = new KeyDto();
+        keyDto.setPrivateKey(privateKeyResponseDto);
+        keyDto.setPublicKey(publicKeyResponseDto);
 
-                return ResponseEntity.ok(response);
-            }
-            case "application/pkix-key" -> {
-                // DER format, base64 encoded, not JSON-wrapped
-                return ResponseEntity.ok("BASE64_ENCODED_PRIVATE_KEY");
-            }
-            case "application/x-pem-file" -> {
-                // PEM format, not JSON-wrapped
-                return ResponseEntity.ok("-----BEGIN PRIVATE KEY-----\nBASE64_ENCODED_PRIVATE_KEY\n-----END PRIVATE KEY-----");
-            }
-        }
+        return ResponseEntity.ok(keyDto);
+    }
 
-        // Default to returning DER in JSON if no specific header is matched
+    @GetMapping(value = "/{identifier}/private", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PrivateKeyResponseDto> getPrivateKeyJson(@PathVariable String identifier) {
         PrivateKeyResponseDto response = new PrivateKeyResponseDto();
-        response.setPrivateKey("BASE64_ENCODED_PRIVATE_KEY");
+        response.setEncoded("BASE64_ENCODED_PRIVATE_KEY");
         response.setReleasedAt("2024-08-25T15:00:00Z");
-        response.setDownloadedAt("2024-08-25T15:01:00Z");
         response.setIdentifier(identifier);
         response.setKeyType("rsa");
         response.setKeySize(2048);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping(value = "/{identifier}/private", produces = "application/pkix-key")
+    public ResponseEntity<String> getPrivateKeyDer(@PathVariable String identifier) {
+        return ResponseEntity.ok("BASE64_ENCODED_PRIVATE_KEY");
+    }
+
+    @GetMapping(value = "/{identifier}/private", produces = "application/x-pem-file")
+    public ResponseEntity<String> getPrivateKeyPem(@PathVariable String identifier) {
+        return ResponseEntity.ok("-----BEGIN PRIVATE KEY-----\nBASE64_ENCODED_PRIVATE_KEY\n-----END PRIVATE KEY-----");
+    }
+
+    @GetMapping(value = "/{identifier}/public", produces = "application/pkix-key")
+    public ResponseEntity<String> getPublicKeyDer(@PathVariable String identifier) {
+        return ResponseEntity.ok("BASE64_ENCODED_PUBLIC_KEY");
+    }
+
+    @GetMapping(value = "/{identifier}/public", produces = "application/x-pem-file")
+    public ResponseEntity<String> getPublicKeyPem(@PathVariable String identifier) {
+        return ResponseEntity.ok("-----BEGIN PUBLIC KEY-----\nBASE64_ENCODED_PUBLIC_KEY\n-----END PRIVATE KEY-----");
     }
 }

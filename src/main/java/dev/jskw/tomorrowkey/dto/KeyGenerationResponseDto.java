@@ -1,15 +1,14 @@
-package dev.jskw.tomorrowkey;
+package dev.jskw.tomorrowkey.dto;
 
 import lombok.Getter;
 import lombok.Setter;
 
 @Setter
 @Getter
-public class PrivateKeyResponseDto {
+public class KeyGenerationResponseDto {
     // Getters and Setters
-    private String privateKey;
-    private String releasedAt;
-    private String downloadedAt;
+    private String encoded;
+    private String releaseAt;
     private String identifier;
     private String keyType;
     private Integer keySize;
