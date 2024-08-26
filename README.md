@@ -2,7 +2,7 @@
 
 ```shell
 docker run \
-  --detatch \
+  --detach \
   --volume data:/data \
   --publish 7070:8080 \
   --env SPRING_DATASOURCE_URL=jdbc:h2:file:/data/h2db \
