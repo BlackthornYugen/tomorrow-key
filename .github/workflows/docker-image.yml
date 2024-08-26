@@ -27,7 +27,7 @@ jobs:
         run: docker build -t tomorrow-key:latest .
 
       - name: Tag Docker image
-        run: docker tag tomorrow-key:latest ghcr.io/${{ github.repository }}/tomorrow-key:latest
+        run: docker tag tomorrow-key:latest ghcr.io/${{ github.repository }}:latest
 
       - name: Push Docker image
-        run: docker push ghcr.io/${{ github.repository }}/tomorrow-key:latest
+        run: docker push ghcr.io/${{ github.repository }}:latest
