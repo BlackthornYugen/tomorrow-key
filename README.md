@@ -1,3 +1,14 @@
+# Introduction
+
+Was inspired by the cool stuff random.org offers
+to support transparent giveaways. Thought it would
+be cool to make an API that let you encrypt
+something that can't be decrypted until a given
+date.
+
+Just a toy for now. Don't trust me to keep it
+secure or running at all.
+
 # Quickstart
 
 ```shell
