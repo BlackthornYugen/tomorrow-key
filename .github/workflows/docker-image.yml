@@ -13,6 +13,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - id: repository
+        uses: ASzc/change-string-case-action@v6
+        with:
+          string: ${{ github.repository }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -27,7 +32,7 @@ jobs:
         run: docker build -t tomorrow-key:latest .
 
       - name: Tag Docker image
-        run: docker tag tomorrow-key:latest ghcr.io/${{ github.repository }}:latest
+        run: docker tag tomorrow-key:latest ghcr.io/${{ steps.repository.outputs.lowercase }}:latest
 
       - name: Push Docker image
-        run: docker push ghcr.io/${{ github.repository }}:latest
+        run: docker push ghcr.io/${{ steps.repository.outputs.lowercase }}:latest
