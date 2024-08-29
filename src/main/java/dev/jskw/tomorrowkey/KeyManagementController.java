@@ -6,6 +6,7 @@ import dev.jskw.tomorrowkey.dto.KeyGenerationResponseDto;
 import dev.jskw.tomorrowkey.dto.PrivateKeyResponseDto;
 import dev.jskw.tomorrowkey.dto.PublicKeyResponseDto;
 import jakarta.validation.constraints.Pattern;
+import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,7 @@ import java.security.NoSuchAlgorithmException;
 
 @RestController
 @RequestMapping("/keys")
+@Slf4j
 public class KeyManagementController {
     private final KeyGenerationService keyGenerationService;
 
@@ -41,12 +43,17 @@ public class KeyManagementController {
                     identifier,
                     request.getReleaseHours()
             );
+            log.info("Key with identifier {} generated", identifier);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
+            log.info("Algorithm not found", noSuchAlgorithmException);
+            log.info(noSuchAlgorithmException.getMessage(), noSuchAlgorithmException);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (InvalidParameterException invalidParameterException) {
+            log.info("Invalid parameter", invalidParameterException);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (FileAlreadyExistsException fileAlreadyExistsException) {
+            log.info("Key with identifier {} already exists", identifier, fileAlreadyExistsException);
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
