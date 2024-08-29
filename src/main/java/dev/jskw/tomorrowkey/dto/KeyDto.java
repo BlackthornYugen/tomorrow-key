@@ -7,8 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
-
 @Setter
 @Getter
 @Builder
@@ -18,8 +16,8 @@ public class KeyDto {
     private String id;
     private KeyType keyType;
     private Integer keySize;
-    private Instant createdAt;
-    private Instant releaseAt;
+    private String createdAt;
+    private String releaseAt;
     private String privateKey;
     private String publicKey;
 }

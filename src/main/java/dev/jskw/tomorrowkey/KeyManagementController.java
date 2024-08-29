@@ -79,6 +79,8 @@ public class KeyManagementController {
         response.setIdentifier(keyDto.getId());
         response.setKeyType(keyDto.getKeyType());
         response.setKeySize(keyDto.getKeySize());
+        response.setCreatedAt(keyDto.getCreatedAt());
+        response.setReleaseAt(keyDto.getReleaseAt());
         return ResponseEntity.ok(response);
     }
 
@@ -112,6 +114,7 @@ public class KeyManagementController {
         response.setIdentifier(keyDto.getId());
         response.setKeyType(keyDto.getKeyType());
         response.setKeySize(keyDto.getKeySize());
+        response.setCreatedAt(keyDto.getCreatedAt());
         return ResponseEntity.ok(response);
     }
 
@@ -161,7 +164,7 @@ public class KeyManagementController {
             keyTypeString = keyDto.getKeyType().equals(KeyType.EC) ? "EC " : "";
             label = "PRIVATE KEY";
         }
-        return String.format("-----BEGIN %s%s-----\n%s-----END %s%s-----\n",
+        return String.format("-----BEGIN %s%s-----%n%s-----END %s%s-----%n",
                 keyTypeString, label,
                 wrapBase64String(key, 64),
                 keyTypeString, label);

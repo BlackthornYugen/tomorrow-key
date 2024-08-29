@@ -9,7 +9,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.FileAlreadyExistsException;
-import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
@@ -24,36 +23,37 @@ public class KeyGenerationService {
 
     public KeyGenerationService(KeyRepository repository) {
         this.repository = repository;
-        formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'");
     }
 
-    public KeyGenerationResponseDto generateKey(KeyType keyType, Integer keySize, String identifier, Long releaseHours) throws NoSuchAlgorithmException, FileAlreadyExistsException {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(keyType.name());
+    public KeyGenerationResponseDto generateKey(KeyType keyType, Integer keySize, String identifier, Long releaseHours)
+            throws NoSuchAlgorithmException, FileAlreadyExistsException {
+        var keyPairGenerator = KeyPairGenerator.getInstance(keyType.name());
         keySize = keySize != null ? keySize : 2048;
         keyPairGenerator.initialize(keySize);
-        KeyPair keyPair = keyPairGenerator.generateKeyPair();
-        LocalDateTime now = LocalDateTime.now();
+        var keyPair = keyPairGenerator.generateKeyPair();
+        var now = LocalDateTime.now(ZoneOffset.UTC).withSecond(0).withNano(0);
         if (releaseHours == null) {
             releaseHours = 24L;
         }
         if (identifier == null) {
             identifier = "%s-%d_hours".formatted(now.format(formatter), releaseHours);
         }
-        KeyDto existingKey = getById(identifier);
+        var existingKey = getById(identifier);
         if (existingKey != null) {
             throw new FileAlreadyExistsException("Key with identifier %s already exists".formatted(identifier));
         }
 
         var key = KeyEntity.builder()
                 .id(identifier)
-                .createdAt(LocalDateTime.now().toInstant(ZoneOffset.UTC))
-                .releaseAt(LocalDateTime.now().plusHours(releaseHours).toInstant(ZoneOffset.UTC))
+                .createdAt(now.toInstant(ZoneOffset.UTC))
+                .releaseAt(now.plusHours(releaseHours).toInstant(ZoneOffset.UTC))
                 .keyType(keyType.name())
                 .keySize(keySize)
                 .encodedPrivateKey(keyPair.getPrivate().getEncoded())
                 .encodedPublicKey(keyPair.getPublic().getEncoded())
                 .build();
-        KeyGenerationResponseDto response = new KeyGenerationResponseDto();
+        var response = new KeyGenerationResponseDto();
         response.setEncoded(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
         response.setReleaseAt(key.getReleaseAt().atZone(ZoneOffset.UTC).format(formatter));
         response.setCreatedAt(key.getCreatedAt().atZone(ZoneOffset.UTC).format(formatter));
@@ -81,11 +81,11 @@ public class KeyGenerationService {
         var builder = KeyDto.builder()
                 .id(keyEntity.getId())
                 .keySize(keyEntity.getKeySize())
-                .releaseAt(keyEntity.getReleaseAt())
-                .createdAt(keyEntity.getCreatedAt())
+                .releaseAt(keyEntity.getReleaseAt().atZone(ZoneOffset.UTC).format(formatter))
+                .createdAt(keyEntity.getCreatedAt().atZone(ZoneOffset.UTC).format(formatter))
                 .keyType(KeyType.valueOf(keyEntity.getKeyType()))
                 .publicKey(Base64.getEncoder().encodeToString(keyEntity.getEncodedPublicKey()));
-        if (keyEntity.getReleaseAt() != null && keyEntity.getReleaseAt().isBefore(LocalDateTime.now().toInstant(ZoneOffset.UTC))) {
+        if (keyEntity.getReleaseAt() != null && keyEntity.getReleaseAt().isBefore(LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC))) {
             builder.privateKey(Base64.getEncoder().encodeToString(keyEntity.getEncodedPrivateKey()));
         }
         return builder.build();

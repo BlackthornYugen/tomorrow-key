@@ -8,8 +8,9 @@ import lombok.Setter;
 @Getter
 public class PrivateKeyResponseDto {
     private String encoded;
-    private String releasedAt;
     private String identifier;
+    private String createdAt;
+    private String releaseAt;
     private KeyType keyType;
     private Integer keySize;
 }
